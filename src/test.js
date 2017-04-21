@@ -1,16 +1,16 @@
+//@flow
 
-import {makeReactor} from './Reactor';
+import {xvar} from './Reactor';
 
-const VAR = makeReactor();
+const a = xvar(() => 5);
+const b = xvar(() => 6);
 
-VAR.a = () => 1;
+const c = xvar(() => a.get() + b.get());
+c.onUpdate(() => console.log('c updated'));
 
-VAR.b = () => 2;
-  
-VAR.c = () => VAR.a + VAR.b;
+console.log(c.get());
 
-console.log(VAR.c)
+a.set(() => 1);
+a.set(() => 1);
 
-VAR.a = () => 5;
-
-console.log(VAR.c)
+console.log(c.get());

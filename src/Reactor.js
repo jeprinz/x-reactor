@@ -3,78 +3,76 @@
 import type {TwoWayMap} from './TwoWayMap';
 import {makeTwoWayMap} from './TwoWayMap';
 import {is} from 'immutable';
+import type {MultiMap} from './MultiMap';
+import {makeMultiMap} from './MultiMap';
 
-type Variable = {
-  value: any,
-  func: () => any
+type XVar<T>  = {
+  get: () => T,
+  onUpdate: (callback: () => void) => void,
+  set: (() => T) => void,
 }
 
-const startValueMagic = Symbol();
+type XImplVar<T>  = XVar<T> & {
+  reset: () => void
+}
 
-function makeHandler(): any{
-  const variables: Map<string, Variable> = new Map();
-  const keyDependsOnValue: TwoWayMap<string, string> = makeTwoWayMap();
-  var referenced: Set<string> = new Set();
-  var runningMagic = false;
+export type Reactor = {
+  xvar: <T> (func: () => T) => XVar<T>
+}
 
-  function setup(prop: string, func: () => any): void{
-    keyDependsOnValue.deleteKey(prop);
+function makeReactor(): Reactor{
 
-    runningMagic = true;
-    referenced = new Set();
-    variables.set(prop, {func, value: func()});
-    for (const dependency of referenced){//TODO: make a setAll method in TwoWayMap
-      keyDependsOnValue.set(prop, dependency);
-    }
-    runningMagic = false;
+  //value depends on key (when key is updated, value needs to be updated)
+  const dependencies: TwoWayMap<XImplVar<any>, XImplVar<any>> = makeTwoWayMap();
 
-    redo(prop, true);
-  }
+  var blackMagic: bool = false;
+  var referenced: Set<XImplVar<any>> = new Set();
 
-  function redo(prop: string, alwaysDo: bool): void{
-    const variable = variables.get(prop);
-    if (variable){
-      const old = variable.value;
-      variable.value = variable.func();
+  return {
+    xvar: function<T>(func: () => T): XVar<T>{
+      var value: T = func();
+      const callbacks: Set<()=>void> = new Set();
+      function reset(alwaysDoReset){
+        const oldVal = value;
+        blackMagic = true;//Black magic
+        value = func();
+        blackMagic = false;//End black magic
 
-      if (!is(old, variable.value) || alwaysDo){
-        const dependsOnMe = keyDependsOnValue.getFromValue(prop);
-        for (const dependency of dependsOnMe){//update everybody that depended on me
-          redo(dependency, false);
+        if (!is(value, oldVal) || alwaysDoReset){
+          dependencies.deleteValue(ret);//get rid of old dependencies
+          for (const value of referenced){
+            dependencies.set(value, ret);//add each new dependency
+          }
+
+          callbacks.forEach((callback) => callback());
+          for (const xvar of dependencies.getFromKey(ret)){
+            xvar.reset();
+          }
         }
-      }
 
-    } else {
-      throw Error("Something went wrong, variable was undefined");
+        referenced = new Set();//Clean up the entrails
+      }
+      const ret = {
+        get: function(){
+          if (blackMagic){
+            referenced.add(ret);
+          }
+          return value;
+        },
+        onUpdate: function(callback){
+          callbacks.add(callback);
+        },
+        set: function(newFunc){
+          func = newFunc;
+          reset()
+        },
+        reset
+      }
+      //this has to run after everything else
+      reset(true);//make sure it collects dependencies at the start
+      return ret;
     }
   }
-
-  const handler = {
-    get: function(target, name){
-      if (runningMagic){
-        referenced.add(name);
-      }
-      const variable = variables.get(name);
-      if (variable){
-        return variable.value;
-      } else {
-        throw Error("invalid variable name " + name);
-      }
-    },
-    set: function(obj, prop, val){
-      if (typeof prop !== "string"){
-        throw Error("Reactor variables should be referenced with a string or Symbol");
-      }
-      if (typeof val !== "function"){
-        throw Error("Reactor variables should be set to functions");
-      }
-      setup(prop, val);
-      return true;
-    }
-  }
-  return handler;
 }
 
-export function makeReactor(){
-  return new Proxy({}, makeHandler());
-}
+export const xvar = makeReactor().xvar
