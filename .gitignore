@@ -59,3 +59,6 @@ typings/
 
 # generated lib
 lib/
+
+# swap files
+*.swp
