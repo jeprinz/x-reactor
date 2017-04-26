@@ -1,6 +1,6 @@
 {
   "name": "x-reactor",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A declarative way to specify how code should respond to state changes",
   "main": "lib/main.js",
   "scripts": {
@@ -33,6 +33,10 @@
   },
   "dependencies": {
     "immutable": "^3.8.1"
+  },
+  "directories": {
+    "lib": "lib",
+    "src": "src"
   }
 
 }
