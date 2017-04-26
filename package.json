@@ -9,10 +9,14 @@
     "build:clean": "rimraf lib",
     "build:lib": "babel -d lib src --ignore '**/__tests__/**'",
     "build:flow": "flow-copy-source -v -i '**/__tests__/**' src lib",
-    "postinstall": "npm run build"
+    "prepublish": "npm run build"
   },
   "author": "Jacob Prinz <jacobeliasprinz@gmail.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeprinz/x-reactor"
+  },
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-core": "^6.24.1",
