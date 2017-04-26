@@ -6,7 +6,7 @@ import {is} from 'immutable';
 import type {MultiMap} from './MultiMap';
 import {makeMultiMap} from './MultiMap';
 
-type XVar<T>  = {
+export type XVar<T>  = {
   get: () => T,
   onUpdate: (callback: () => void) => void,
   set: (() => T) => void,

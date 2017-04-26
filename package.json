@@ -2,9 +2,8 @@
   "name": "x-reactor",
   "version": "0.0.1",
   "description": "A declarative way to specify how code should respond to state changes",
-  "main": "dist/bundle.js",
+  "main": "lib/main.js",
   "scripts": {
-    "test": "babel-node ./src/test.js",
     "repl": "babel-node",
     "build": "npm run build:clean && npm run build:lib && npm run build:flow",
     "build:clean": "rimraf lib",
