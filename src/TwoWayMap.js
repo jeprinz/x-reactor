@@ -1,8 +1,11 @@
 // @flow
 
+//This file implements a two way multimap
+
 import type {MultiMap} from './MultiMap';
 import {makeMultiMap} from './MultiMap';
 
+/// A two way multimap.
 export type TwoWayMap<Key, Value> = {
   set: (key: Key, value: Value) => void,
   getFromKey: (key: Key) => Set<Value>,
