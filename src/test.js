@@ -5,7 +5,7 @@ import {xvar} from './Reactor';
 const a = xvar(() => 5);
 const b = xvar(() => 6);
 
-const c = xvar(() => a.get() + b.get());
+const c = xvar(() => a.xget() + b.xget());
 c.onUpdate(() => console.log('c updated'));
 
 console.log(c.get());

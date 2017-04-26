@@ -8,6 +8,7 @@ import {makeMultiMap} from './MultiMap';
 
 export type XVar<T>  = {
   get: () => T,
+  xget: () => T,
   onUpdate: (callback: () => void) => void,
   set: (() => T) => void,
 }
@@ -26,17 +27,22 @@ function makeReactor(): Reactor{
   const dependencies: TwoWayMap<XImplVar<any>, XImplVar<any>> = makeTwoWayMap();
 
   var blackMagic: bool = false;
+  var allowXGet = false; //only allow when defining or resetting
   var referenced: Set<XImplVar<any>> = new Set();
 
   return {
     xvar: function<T>(func: () => T): XVar<T>{
+      allowXGet = true;
       var value: T = func();
+      allowXGet = false;
       const callbacks: Set<()=>void> = new Set();
       function reset(alwaysDoReset){
         const oldVal = value;
         blackMagic = true;//Black magic
+        allowXGet = true;//Black magic
         value = func();
         blackMagic = false;//End black magic
+        allowXGet = false;//Black magic
 
         if (!is(value, oldVal) || alwaysDoReset){
           dependencies.deleteValue(ret);//get rid of old dependencies
@@ -46,7 +52,9 @@ function makeReactor(): Reactor{
 
           callbacks.forEach((callback) => callback());
           for (const xvar of dependencies.getFromKey(ret)){
+            allowXGet = true;
             xvar.reset();
+            allowXGet = false;
           }
         }
 
@@ -54,22 +62,31 @@ function makeReactor(): Reactor{
       }
       const ret = {
         get: function(){
-          if (blackMagic){
-            referenced.add(ret);
-          }
           return value;
+        },
+        xget: function(){
+          if (allowXGet){
+            referenced.add(ret);
+            return value;
+          } else {
+            throw Error("xget can only be called from inside of xvar() or xvar.set");
+          }
         },
         onUpdate: function(callback){
           callbacks.add(callback);
         },
         set: function(newFunc){
           func = newFunc;
+          allowXGet = true;
           reset()
+          allowXGet = false;
         },
         reset
       }
       //this has to run after everything else
+      allowXGet = true;
       reset(true);//make sure it collects dependencies at the start
+      allowXGet = false;
       return ret;
     }
   }
