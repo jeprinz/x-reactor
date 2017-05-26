@@ -21,45 +21,54 @@ export type Reactor = {
   xvar: <T> (func: () => T) => XVar<T>
 }
 
+var iters = 0;
+
 function makeReactor(): Reactor{
 
   //value depends on key (when key is updated, value needs to be updated)
   const dependencies: TwoWayMap<XImplVar<any>, XImplVar<any>> = makeTwoWayMap();
 
-  var blackMagic: bool = false;
   var allowXGet = false; //only allow when defining or resetting
   var referenced: Set<XImplVar<any>> = new Set();
 
   return {
     xvar: function<T>(func: () => T): XVar<T>{
+      //Initial setup
       allowXGet = true;
-      var value: T = func();
+      var value: T;
       allowXGet = false;
       const callbacks: Set<()=>void> = new Set();
-      function reset(alwaysDoReset){
+      function reset(){
+        console.log(2);
         const oldVal = value;
-        blackMagic = true;//Black magic
         allowXGet = true;//Black magic
-        value = func();
-        blackMagic = false;//End black magic
+        value = func();//'referenced' is modified here
         allowXGet = false;//Black magic
 
-        if (!is(value, oldVal) || alwaysDoReset){
-          dependencies.deleteValue(ret);//get rid of old dependencies
-          for (const value of referenced){
-            dependencies.set(value, ret);//add each new dependency
-          }
+        //TODO: make this more efficient than deleting all these things each time
+        //TODO: do this by creating 'quick comparison Set' for referenced using hashes
+        //redo dependencies whether or not value changed
+        dependencies.deleteValue(ret);//get rid of old dependencies
+        for (const value of referenced){
+          dependencies.set(value, ret);//add each new dependency
+        }
+        referenced = new Set();//Clean up the entrails
 
+        if (!is(value, oldVal)){
           callbacks.forEach((callback) => callback());
-          for (const xvar of dependencies.getFromKey(ret)){
+          const things = [];//This is the ugliest shit but I need to copy it or
+                            //else the iterator will get skrewed up and cause crash
+          dependencies.getFromKey(ret).forEach((elt) => things.push(elt));
+          for (const xvar of things){
             allowXGet = true;
+            console.log(3);
             xvar.reset();
             allowXGet = false;
           }
         }
 
-        referenced = new Set();//Clean up the entrails
       }
+      //Define the xvar object to be returned
       const ret = {
         get: function(){
           return value;
@@ -77,16 +86,14 @@ function makeReactor(): Reactor{
         },
         set: function(newFunc){
           func = newFunc;
-          allowXGet = true;
+          console.log(1);
           reset()
-          allowXGet = false;
         },
         reset
       }
+      //Actually initialize a value
       //this has to run after everything else
-      allowXGet = true;
-      reset(true);//make sure it collects dependencies at the start
-      allowXGet = false;
+      reset();//make sure it collects dependencies at the start
       return ret;
     }
   }

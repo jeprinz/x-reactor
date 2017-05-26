@@ -9,7 +9,8 @@
     "build:clean": "rimraf lib",
     "build:lib": "babel -d lib src --ignore '**/__tests__/**'",
     "build:flow": "flow-copy-source -v -i '**/__tests__/**' src lib",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "test": "babel-node src/test.js"
   },
   "author": "Jacob Prinz <jacobeliasprinz@gmail.com>",
   "license": "ISC",
@@ -26,7 +27,7 @@
     "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-0": "^6.22.0",
     "flow": "^0.2.3",
-    "flow-bin": "^0.42.0",
+    "flow-bin": "^0.47.0",
     "flow-copy-source": "^1.1.0",
     "mocha": "^3.2.0",
     "rimraf": "^2.6.1"
@@ -38,5 +39,4 @@
     "lib": "lib",
     "src": "src"
   }
-
 }

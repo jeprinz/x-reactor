@@ -1,16 +1,18 @@
 //@flow
 
 import {xvar} from './Reactor';
+import type {XVar} from './Reactor';
+import {List} from 'immutable';
 
-const a = xvar(() => 5);
-const b = xvar(() => 6);
+const input: XVar<List<string>> = xvar(() => new List());
+var output2 = xvar(() => new List());
 
-const c = xvar(() => a.xget() + b.xget());
-c.onUpdate(() => console.log('c updated'));
+console.log('setup done');
 
-console.log(c.get());
-
-a.set(() => 1);
-a.set(() => 1);
-
-console.log(c.get());
+output2.set(() => input.xget().map((line) => "Line: " + line));
+console.log("output2: ", output2.get());
+input.set(() => {
+  return new List(['a','b']);
+  // return input.get().push("hey there");
+});
+console.log("output2: ", output2.get());
