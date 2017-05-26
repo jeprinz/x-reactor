@@ -10,7 +10,8 @@
     "build:lib": "babel -d lib src --ignore '**/__tests__/**'",
     "build:flow": "flow-copy-source -v -i '**/__tests__/**' src lib",
     "prepublish": "npm run build",
-    "test": "babel-node src/test.js"
+    "test": "mocha -u tdd --compilers js:babel-core/register",
+    "old-test": "babel-node src/test.js"
   },
   "author": "Jacob Prinz <jacobeliasprinz@gmail.com>",
   "license": "ISC",

@@ -39,7 +39,6 @@ function makeReactor(): Reactor{
       allowXGet = false;
       const callbacks: Set<()=>void> = new Set();
       function reset(){
-        console.log(2);
         const oldVal = value;
         allowXGet = true;//Black magic
         value = func();//'referenced' is modified here
@@ -61,7 +60,6 @@ function makeReactor(): Reactor{
           dependencies.getFromKey(ret).forEach((elt) => things.push(elt));
           for (const xvar of things){
             allowXGet = true;
-            console.log(3);
             xvar.reset();
             allowXGet = false;
           }
@@ -86,7 +84,6 @@ function makeReactor(): Reactor{
         },
         set: function(newFunc){
           func = newFunc;
-          console.log(1);
           reset()
         },
         reset
