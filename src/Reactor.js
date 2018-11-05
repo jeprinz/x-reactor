@@ -28,30 +28,30 @@ function makeReactor(): Reactor{
   //value depends on key (when key is updated, value needs to be updated)
   const dependencies: TwoWayMap<XImplVar<any>, XImplVar<any>> = makeTwoWayMap();
 
-  var allowXGet = false; //only allow when defining or resetting
-  var referenced: Set<XImplVar<any>> = new Set();
+  var allowXGet = 0; //only allow when defining or resetting
+  var referencedStack: Array<Set<XImplVar<any>>> = [];
 
   return {
     xvar: function<T>(func: () => T): XVar<T>{
       //Initial setup
-      allowXGet = true;
+      allowXGet += 1;
       var value: T;
-      allowXGet = false;
+      allowXGet -= 1;
       const callbacks: Set<()=>void> = new Set();
       function reset(){
         const oldVal = value;
-        allowXGet = true;//Black magic
-        value = func();//'referenced' is modified here
-        allowXGet = false;//Black magic
+        referencedStack.push(new Set())
+        allowXGet += 1;//Black magic
+        value = func();//last element of referenceStack is modified here
+        allowXGet -= 1;//Black magic
 
         //TODO: make this more efficient than deleting all these things each time
         //TODO: do this by creating 'quick comparison Set' for referenced using hashes
         //redo dependencies whether or not value changed
         dependencies.deleteValue(ret);//get rid of old dependencies
-        for (const value of referenced){
+        for (const value of referencedStack.pop()){
           dependencies.set(value, ret);//add each new dependency
         }
-        referenced = new Set();//Clean up the entrails
 
         if (!is(value, oldVal)){
           callbacks.forEach((callback) => callback());
@@ -59,9 +59,9 @@ function makeReactor(): Reactor{
                             //else the iterator will get skrewed up and cause crash
           dependencies.getFromKey(ret).forEach((elt) => things.push(elt));
           for (const xvar of things){
-            allowXGet = true;
+            allowXGet += 1;
             xvar.reset();
-            allowXGet = false;
+            allowXGet -= 1;
           }
         }
 
@@ -72,8 +72,8 @@ function makeReactor(): Reactor{
           return value;
         },
         xget: function(){
-          if (allowXGet){
-            referenced.add(ret);
+          if (allowXGet !== 0){
+            referencedStack[referencedStack.length - 1].add(ret);
             return value;
           } else {
             throw Error("xget can only be called from inside of xvar() or xvar.set");

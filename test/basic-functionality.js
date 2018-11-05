@@ -89,4 +89,28 @@ describe('get function', function(){
     d.set(() => 7);
     assert(result.get() == 7);
   });
+
+  it('deals with xvar inside of an xvar', () => {
+      let before : XVar<string> = xvar(() => "before")
+      let after : XVar<string> = xvar(() => "after")
+
+      let b : XVar<[string, XVar<string>, string]> =
+        xvar(() => [before.xget() , xvar(() => "hi"), after.xget()]);
+      let a = b.get()[1]
+
+      assert(b.get()[1].get() === "hi");
+      assert(b.get()[2] === "after")
+
+      // change a
+      a.set(() => "bye")
+      assert(b.get()[1].get() == "bye")
+
+      //change after
+      after.set(() => "after'")
+      assert(b.get()[2] === "after'")
+
+      //change before
+      before.set(() => "before'")
+      assert(b.get()[0] === "before'")
+    })
 })
